@@ -102,7 +102,7 @@ The following values are defined in the `EngineConfig` class:
 
 ## Troubleshooting
 
-  * **Lag or Freezing:** The simulation now uses a native graph implementation to eliminate lag caused by external plotting libraries. If you still experience low FPS on Windows, ensure you have not clicked inside the terminal window to select text, as this pauses script execution.
+  * **Lag or Freezing:** If you still experience low FPS on Windows, ensure you have not clicked inside the terminal window to select text, as this pauses script execution.
   * **Sound not playing:** Verify that the path provided in `ENGINE_SOUND_FILE` is an absolute path and that the file format is supported by Pygame (we recommend .wav or .ogg).
 
 <!-- end list -->
