@@ -11,8 +11,12 @@ You need **Python 3.8** or newer.
    ```bash
    pip install pygame numpy
    ```
+   or(run inside src)
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-2.  Ensure your file structure places `engine.py` and `main.py` in the same directory (e.g., inside a `src/` folder).
+3.  Ensure your file structure places `engine.py` and `main.py` in the same directory (e.g., inside a `src/` folder).
 
 ## How to Run
 
