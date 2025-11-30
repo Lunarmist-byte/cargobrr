@@ -106,6 +106,3 @@ The following values are defined in the `EngineConfig` class:
   * **Sound not playing:** Verify that the path provided in `ENGINE_SOUND_FILE` is an absolute path and that the file format is supported by Pygame (we recommend .wav or .ogg).
 
 <!-- end list -->
-
-```
-```
