@@ -108,5 +108,9 @@ The following values are defined in the `EngineConfig` class:
 
   * **Lag or Freezing:** If you still experience low FPS on Windows, ensure you have not clicked inside the terminal window to select text, as this pauses script execution.
   * **Sound not playing:** Verify that the path provided in `ENGINE_SOUND_FILE` is an absolute path and that the file format is supported by Pygame (we recommend .wav or .ogg).
+## Images
+<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/67dd7717-0175-403c-8bac-8aba33e9b64e" />
+<img width="500" height="500" alt="Screenshot 2025-11-30 195801" src="https://github.com/user-attachments/assets/0e915450-1ca3-4ce6-8c0c-e0f87df0b297" />
+
 
 <!-- end list -->
