@@ -3,11 +3,8 @@ import math
 import csv
 import sys
 import os
-import matplotlib.pyplot as plt
 from collections import deque
 from engine import Engine, EngineConfig
-
-plt.ion()
 
 WIDTH, HEIGHT = 1280, 720
 FPS = 60
@@ -30,6 +27,38 @@ def draw_text(screen, text, x, y, size=20, color=TEXT_WHITE, align="left"):
     else: rect.topleft = (x, y)
     screen.blit(surf, rect)
 
+class TelemetryGraph:
+    def __init__(self, x, y, w, h, label, color):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.color = color
+        self.label = label
+        self.data = deque(maxlen=100)
+        self.max_val = 1.0
+
+    def update(self, value):
+        self.data.append(value)
+        if value > self.max_val: self.max_val = value
+        elif self.max_val > 1.0 and value < self.max_val * 0.9: self.max_val *= 0.99
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, (15, 16, 20), self.rect)
+        pygame.draw.rect(screen, (40, 44, 50), self.rect, 1)
+        draw_text(screen, self.label, self.rect.x + 8, self.rect.y + 5, 14, self.color)
+        draw_text(screen, f"{self.data[-1]:.0f}" if self.data else "0", self.rect.right - 8, self.rect.y + 5, 14, TEXT_WHITE, "right")
+
+        if len(self.data) < 2: return
+
+        points = []
+        width_step = self.rect.w / (self.data.maxlen - 1)
+        for i, val in enumerate(self.data):
+            px = self.rect.x + (i * width_step)
+            norm_y = (val / (self.max_val + 1e-6))
+            py = self.rect.bottom - (norm_y * self.rect.h)
+            points.append((px, py))
+
+        if len(points) > 1:
+            pygame.draw.lines(screen, self.color, False, points, 2)
+
 class ModernGauge:
     def __init__(self, x, y, radius, label, max_val, units, color=ACCENT_CYAN):
         self.x, self.y, self.r = x, y, radius
@@ -50,7 +79,6 @@ class ModernGauge:
             oy = self.y + (self.r - 20) * math.sin(angle_rad)
             ix = self.x + (self.r - 30) * math.cos(angle_rad)
             iy = self.y + (self.r - 30) * math.sin(angle_rad)
-            
             tick_col = ACCENT_RED if (frac > 0.8 and "RPM" in self.label) else (80, 80, 80)
             pygame.draw.line(screen, tick_col, (ix, iy), (ox, oy), 3)
 
@@ -62,14 +90,11 @@ class ModernGauge:
                 f2 = (i + 1) / 60.0 * val_frac
                 a1 = math.radians(start_angle + f1 * sweep_range)
                 a2 = math.radians(start_angle + f2 * sweep_range)
-                
-                ro = self.r - 10
-                ri = self.r - 18
+                ro, ri = self.r - 10, self.r - 18
                 p1 = (self.x + ro * math.cos(a1), self.y + ro * math.sin(a1))
                 p2 = (self.x + ro * math.cos(a2), self.y + ro * math.sin(a2))
                 p3 = (self.x + ri * math.cos(a2), self.y + ri * math.sin(a2))
                 p4 = (self.x + ri * math.cos(a1), self.y + ri * math.sin(a1))
-                
                 col = ACCENT_RED if is_redline or (val_frac > 0.9 and "RPM" in self.label) else self.color
                 pygame.draw.polygon(screen, col, [p1, p2, p3, p4])
 
@@ -107,7 +132,6 @@ class Slider:
     def draw(self, screen):
         draw_text(screen, f"{self.label}", self.rect.x, self.rect.y - 20, 14, (150, 150, 150))
         draw_text(screen, f"{self.value:.2f}", self.rect.right - 40, self.rect.y - 20, 14, ACCENT_CYAN, "right")
-        
         pygame.draw.rect(screen, (40, 44, 50), self.rect, border_radius=4)
         fill_w = int((self.value - self.min_v) / (self.max_v - self.min_v) * self.rect.w)
         fill_rect = pygame.Rect(self.rect.x, self.rect.y, fill_w, self.rect.h)
@@ -132,25 +156,20 @@ def main():
     g_speed = ModernGauge(WIDTH//2 - 320, 320, 110, "SPEED", 240, "km/h", ACCENT_CYAN)
     g_boost = ModernGauge(WIDTH//2 + 320, 320, 110, "BOOST", 2.0, "bar", ACCENT_ORANGE)
 
-    rpm_hist, speed_hist, t_hist = deque(maxlen=200), deque(maxlen=200), deque(maxlen=200)
+    graph_rpm = TelemetryGraph(WIDTH - 320, HEIGHT - 120, 300, 100, "LIVE RPM", ACCENT_CYAN)
+
     csvf = open(LOG_CSV, "w", newline="")
     writer = csv.writer(csvf)
     writer.writerow(["t", "rpm", "throttle", "gear", "boost", "speed"])
-    
-    fig, ax1 = plt.subplots(figsize=(5, 3), facecolor='#0F1015')
-    ax1.set_facecolor('#0F1015')
-    ax1.tick_params(colors='white')
-    line_rpm, = ax1.plot([], [], color='#00F0FF', linewidth=1.5)
-    
+
     if SOUND_FILE and os.path.exists(SOUND_FILE):
         try: pygame.mixer.music.load(SOUND_FILE); pygame.mixer.music.play(-1)
         except: pass
 
-    running, show_plot, frame_count = True, False, 0
+    running = True
 
     while running:
         dt = clock.tick(FPS) / 1000.0
-        frame_count += 1
         
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT: running = False
@@ -159,7 +178,6 @@ def main():
                 if ev.key == pygame.K_e: eng.gear_up()
                 if ev.key == pygame.K_q: eng.gear_down()
                 if ev.key == pygame.K_r: eng = Engine(cfg)
-                if ev.key == pygame.K_p: show_plot = not show_plot
                 if ev.key == pygame.K_UP: s_throttle.value = min(1.0, s_throttle.value + 0.1)
                 if ev.key == pygame.K_DOWN: s_throttle.value = max(0.0, s_throttle.value - 0.1)
             for s in sliders: s.handle_event(ev)
@@ -174,6 +192,7 @@ def main():
         st = eng.get_state()
 
         g_rpm.max_val = eng.cfg.redline
+        graph_rpm.update(st['rpm'])
 
         screen.fill(BG_COLOR)
         
@@ -188,6 +207,7 @@ def main():
         g_rpm.draw(screen, st['rpm'], is_redline=st['rpm']>eng.cfg.redline*0.95)
         g_speed.draw(screen, st['speed_kmh'])
         g_boost.draw(screen, st['boost'])
+        graph_rpm.draw(screen)
 
         if st['backfire']:
             draw_text(screen, "💥", WIDTH//2 + 90, 450, 60, align="center")
@@ -197,15 +217,6 @@ def main():
              draw_text(screen, "BRAKE", WIDTH//2, 500, 25, ACCENT_RED, "center")
 
         for s in sliders: s.draw(screen)
-
-        t_hist.append(st['time'])
-        rpm_hist.append(st['rpm'])
-        if show_plot and frame_count % 15 == 0:
-            try:
-                line_rpm.set_data(t_hist, rpm_hist)
-                ax1.relim(); ax1.autoscale_view()
-                plt.pause(0.001)
-            except: pass
 
         if SOUND_FILE and pygame.mixer.music.get_busy():
             vol = 0.2 + 0.8 * min(1.0, st["rpm"] / eng.cfg.redline)
@@ -217,7 +228,6 @@ def main():
 
     csvf.close()
     pygame.quit()
-    plt.close('all')
 
 if __name__ == "__main__":
     main()
