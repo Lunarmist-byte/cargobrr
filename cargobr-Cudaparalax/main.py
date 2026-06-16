@@ -173,6 +173,9 @@ def main():
         try: pygame.mixer.music.load(SOUND_FILE); pygame.mixer.music.play(-1)
         except: pass
 
+    current_tab = "DASHBOARD"
+    is_recording = False
+
     running = True
 
     while running:
@@ -202,6 +205,8 @@ def main():
                     s_redline.value = cfg.redline
                 if ev.key == pygame.K_UP: s_throttle.value = min(1.0, s_throttle.value + 0.1)
                 if ev.key == pygame.K_DOWN: s_throttle.value = max(0.0, s_throttle.value - 0.1)
+                if ev.key == pygame.K_TAB: current_tab = "CONTROLS" if current_tab == "DASHBOARD" else "DASHBOARD"
+                if ev.key == pygame.K_s: is_recording = not is_recording
             for s in sliders: s.handle_event(ev)
 
         keys = pygame.key.get_pressed()
@@ -222,25 +227,43 @@ def main():
         draw_text(screen, "CARGOBRR (CUDA Swarm)", 20, 20, 30, ACCENT_CYAN)
         draw_text(screen, f"ENGINE: {cfg.engine_type} [{cfg.aspiration}] {cfg.transmission} (T=Type, B=Boost, G=Gears)", 20, 60, 20, TEXT_WHITE)
         draw_text(screen, f"Active GPU Threads: 10,000", WIDTH//2 - 100, 20, 20, ACCENT_ORANGE)
+        draw_text(screen, "TAB: Controls | S: " + ("STOP REC" if is_recording else "START REC"), WIDTH//2, 80, 20, ACCENT_RED if is_recording else TEXT_WHITE, "center")
         
-        status_col = ACCENT_RED if st['damaged'] else (100, 255, 100)
-        draw_text(screen, f"TEMP: {st['coolant_temp']:.1f}C", WIDTH-250, 25, 20, status_col)
-        draw_text(screen, f"AFR: {st['afr']:.1f}", WIDTH-450, 25, 20, TEXT_WHITE)
-        draw_text(screen, f"GEAR: {st['gear'] if st['gear']>0 else 'N'}", WIDTH//2, 50, 40, ACCENT_ORANGE, "center")
+        if current_tab == "DASHBOARD":
+            status_col = ACCENT_RED if st['damaged'] else (100, 255, 100)
+            draw_text(screen, f"TEMP: {st['coolant_temp']:.1f}C", WIDTH-250, 25, 20, status_col)
+            draw_text(screen, f"AFR: {st['afr']:.1f}", WIDTH-450, 25, 20, TEXT_WHITE)
+            draw_text(screen, f"GEAR: {st['gear'] if st['gear']>0 else 'N'}", WIDTH//2, 50, 40, ACCENT_ORANGE, "center")
 
-        g_rpm.draw(screen, st['rpm'], is_redline=st['rpm']>eng.cfg.redline*0.95)
-        g_speed.draw(screen, st['speed_kmh'])
-        g_boost.draw(screen, st['boost'])
-        graph_rpm.draw(screen)
+            g_rpm.draw(screen, st['rpm'], is_redline=st['rpm']>eng.cfg.redline*0.95)
+            g_speed.draw(screen, st['speed_kmh'])
+            g_boost.draw(screen, st['boost'])
+            graph_rpm.draw(screen)
 
-        if st['backfire']:
-            draw_text(screen, "💥", WIDTH//2 + 90, 450, 60, align="center")
-        if st['limp_mode']:
-            draw_text(screen, "CHECK ENGINE", WIDTH//2, 200, 25, ACCENT_RED, "center")
-        if st['brake']:
-             draw_text(screen, "BRAKE", WIDTH//2, 500, 25, ACCENT_RED, "center")
+            if st['backfire']:
+                draw_text(screen, "💥", WIDTH//2 + 90, 450, 60, align="center")
+            if st['limp_mode']:
+                draw_text(screen, "CHECK ENGINE", WIDTH//2, 200, 25, ACCENT_RED, "center")
+            if st['brake']:
+                 draw_text(screen, "BRAKE", WIDTH//2, 500, 25, ACCENT_RED, "center")
 
-        for s in sliders: s.draw(screen)
+            for s in sliders: s.draw(screen)
+        elif current_tab == "CONTROLS":
+            draw_text(screen, "CONTROLS MENU", WIDTH//2, 150, 40, ACCENT_CYAN, "center")
+            controls = [
+                "UP / DOWN : Throttle",
+                "SPACE : Brake",
+                "Q / E : Shift Down / Up",
+                "T : Change Engine Profile",
+                "B : Change Aspiration (NA/Turbo/SC)",
+                "G : Change Gearbox (5/6/7/8 Speed)",
+                "R : Reset Engine / Repair",
+                "S : Toggle Excel/CSV Recording",
+                "TAB : Toggle Dashboard / Controls Tab",
+                "ESC : Quit"
+            ]
+            for i, c in enumerate(controls):
+                draw_text(screen, c, WIDTH//2, 220 + i*35, 24, TEXT_WHITE, "center")
 
         if SOUND_FILE and pygame.mixer.music.get_busy():
             vol = 0.2 + 0.8 * min(1.0, st["rpm"] / eng.cfg.redline)
@@ -248,7 +271,8 @@ def main():
             
         pygame.display.flip()
         
-        writer.writerow([st['time'], st['rpm'], st['throttle'], st['gear'], st['boost'], st['speed_kmh']])
+        if is_recording:
+            writer.writerow([st['time'], st['rpm'], st['throttle'], st['gear'], st['boost'], st['speed_kmh']])
 
     csvf.close()
     pygame.quit()
