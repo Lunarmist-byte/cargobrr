@@ -138,6 +138,7 @@ class Engine:
     def __init__(self, cfg=None):
         self.cfg = cfg or EngineConfig()
         self.state = EngineState(self.cfg)
+
         self.last_throttle = 0.0
 
     def get_volumetric_efficiency(self, rpm):
@@ -167,20 +168,17 @@ class Engine:
 
     def update_turbo(self, dt):
         s = self.state
-        # Turbo target depends on load (throttle) and exhaust flow (RPM)
         rpm_frac = s.rpm / self.cfg.redline
-        # Turbo hits hard around mid-range
         flow_factor = min(1.0, rpm_frac * 1.5)
         
         s.target_boost = s.throttle * self.cfg.max_boost_bar * flow_factor
         
-        # Spool up/down logic
+        # Spool up or down 
         if s.target_boost > s.boost:
             # Spool up
             rate = (1.0 / self.cfg.turbo_inertia) * (1.0 + rpm_frac) # Spools faster at high RPM
             s.boost += (s.target_boost - s.boost) * dt * rate
         else:
-            # Blow off (drops fast when throttle closes)
             s.boost += (s.target_boost - s.boost) * dt * 3.0
 
     def update_vehicle(self, engine_torque, dt):
@@ -202,21 +200,18 @@ class Engine:
         accel = net_force / self.cfg.vehicle_mass
         s.speed = max(0.0, s.speed + accel * dt)
 
-        # Clutch linkage
+        # Clutch
         if s.current_gear > 0:
             wheel_rpm = (s.speed / (2 * math.pi * self.cfg.wheel_radius)) * 60.0
             target_rpm = wheel_rpm * gear_ratio * self.cfg.final_drive
-            # Solid clutch feel
             s.rpm = (s.rpm * 0.6) + (target_rpm * 0.4)
 
     def update(self, dt):
         s = self.state
 
-        # Rev Limiter
+        # Rev Limit
         if s.rpm > self.cfg.redline + 50: s.fuel_cut = True
         elif s.fuel_cut and s.rpm < self.cfg.redline - 150: s.fuel_cut = False
-            
-        # Backfire
         s.backfire = False
         if s.rpm > 4500 and (self.last_throttle - s.throttle) > 0.3:
             if random.random() < 0.4: s.backfire = True
@@ -230,7 +225,7 @@ class Engine:
             effective_torque = -50.0 
         else:
             # Boost acts as a Multiplier on Torque
-            boost_mult = 1.0 + (0.8 * s.boost) # 1.6 bar adds ~128% more power
+            boost_mult = 1.0 + (0.8 * s.boost) 
             effective_torque = base_torque * s.throttle * boost_mult
 
         self.update_turbo(dt)
