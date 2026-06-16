@@ -5,9 +5,10 @@ import time
 import random
 
 class EngineConfig:
-    def __init__(self, engine_type="2.0L", aspiration="Stock"):
+    def __init__(self, engine_type="2.0L", aspiration="Stock", transmission="6-Speed"):
         self.engine_type = engine_type
         self.aspiration = aspiration
+        self.transmission = transmission
         self.ambient_temp = 25.0
         self.max_coolant_temp = 120.0
         self.overheat_rate = 0.08
@@ -18,7 +19,17 @@ class EngineConfig:
         self.drag_coefficient = 0.30
         self.frontal_area = 2.2
         self.final_drive = 3.9
-        self.gear_ratios = [0.0, 3.8, 2.3, 1.5, 1.1, 0.9] 
+        
+        if transmission == "5-Speed":
+            self.gear_ratios = [0.0, 3.8, 2.3, 1.5, 1.1, 0.9]
+        elif transmission == "6-Speed":
+            self.gear_ratios = [0.0, 3.8, 2.3, 1.5, 1.1, 0.9, 0.75]
+        elif transmission == "7-Speed":
+            self.gear_ratios = [0.0, 3.8, 2.3, 1.5, 1.1, 0.9, 0.75, 0.6]
+        elif transmission == "8-Speed":
+            self.gear_ratios = [0.0, 4.7, 3.1, 2.1, 1.6, 1.2, 1.0, 0.8, 0.6]
+        else:
+            self.gear_ratios = [0.0, 3.8, 2.3, 1.5, 1.1, 0.9, 0.75]
 
         if engine_type == "2.0L":
             self.idle_rpm = 900.0

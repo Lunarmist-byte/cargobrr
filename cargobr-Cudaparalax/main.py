@@ -148,7 +148,9 @@ def main():
     current_engine_idx = 0
     aspiration_types = ["Stock", "NA", "Turbo", "SC"]
     current_aspiration_idx = 0
-    cfg = EngineConfig(engine_types[current_engine_idx], aspiration_types[current_aspiration_idx])
+    transmission_types = ["5-Speed", "6-Speed", "7-Speed", "8-Speed"]
+    current_transmission_idx = 1
+    cfg = EngineConfig(engine_types[current_engine_idx], aspiration_types[current_aspiration_idx], transmission_types[current_transmission_idx])
     
     # Instantiate 10,000 CUDA engines
     eng = Engine(cfg, num_engines=10000)
@@ -185,12 +187,17 @@ def main():
                 if ev.key == pygame.K_r: eng = Engine(cfg, num_engines=10000)
                 if ev.key == pygame.K_t: 
                     current_engine_idx = (current_engine_idx + 1) % len(engine_types)
-                    cfg = EngineConfig(engine_types[current_engine_idx], aspiration_types[current_aspiration_idx])
+                    cfg = EngineConfig(engine_types[current_engine_idx], aspiration_types[current_aspiration_idx], transmission_types[current_transmission_idx])
                     eng = Engine(cfg, num_engines=10000)
                     s_redline.value = cfg.redline
                 if ev.key == pygame.K_b:
                     current_aspiration_idx = (current_aspiration_idx + 1) % len(aspiration_types)
-                    cfg = EngineConfig(engine_types[current_engine_idx], aspiration_types[current_aspiration_idx])
+                    cfg = EngineConfig(engine_types[current_engine_idx], aspiration_types[current_aspiration_idx], transmission_types[current_transmission_idx])
+                    eng = Engine(cfg, num_engines=10000)
+                    s_redline.value = cfg.redline
+                if ev.key == pygame.K_g:
+                    current_transmission_idx = (current_transmission_idx + 1) % len(transmission_types)
+                    cfg = EngineConfig(engine_types[current_engine_idx], aspiration_types[current_aspiration_idx], transmission_types[current_transmission_idx])
                     eng = Engine(cfg, num_engines=10000)
                     s_redline.value = cfg.redline
                 if ev.key == pygame.K_UP: s_throttle.value = min(1.0, s_throttle.value + 0.1)
@@ -213,7 +220,7 @@ def main():
         
         pygame.draw.rect(screen, (15, 18, 22), (0, 0, WIDTH, 100))
         draw_text(screen, "CARGOBRR (CUDA Swarm)", 20, 20, 30, ACCENT_CYAN)
-        draw_text(screen, f"ENGINE: {cfg.engine_type} [{cfg.aspiration}] (T=Type, B=Boost)", 20, 60, 20, TEXT_WHITE)
+        draw_text(screen, f"ENGINE: {cfg.engine_type} [{cfg.aspiration}] {cfg.transmission} (T=Type, B=Boost, G=Gears)", 20, 60, 20, TEXT_WHITE)
         draw_text(screen, f"Active GPU Threads: 10,000", WIDTH//2 - 100, 20, 20, ACCENT_ORANGE)
         
         status_col = ACCENT_RED if st['damaged'] else (100, 255, 100)
