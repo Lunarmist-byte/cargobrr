@@ -130,12 +130,13 @@ class Slider:
         if self.step > 0: self.value = round(self.value / self.step) * self.step
 
     def draw(self, screen):
-        draw_text(screen, f"{self.label}", self.rect.x, self.rect.y - 20, 14, (150, 150, 150))
-        draw_text(screen, f"{self.value:.2f}", self.rect.right - 40, self.rect.y - 20, 14, ACCENT_CYAN, "right")
-        pygame.draw.rect(screen, (40, 44, 50), self.rect, border_radius=4)
+        draw_text(screen, f"{self.label}", self.rect.x, self.rect.y - 20, 12, (150, 150, 150))
+        draw_text(screen, f"{self.value:.2f}", self.rect.right, self.rect.y - 20, 12, ACCENT_CYAN, "right")
+        pygame.draw.rect(screen, (30, 33, 38), self.rect, border_radius=4)
         fill_w = int((self.value - self.min_v) / (self.max_v - self.min_v) * self.rect.w)
-        fill_rect = pygame.Rect(self.rect.x, self.rect.y, fill_w, self.rect.h)
-        pygame.draw.rect(screen, ACCENT_CYAN, fill_rect, border_radius=4)
+        if fill_w > 0:
+            fill_rect = pygame.Rect(self.rect.x, self.rect.y, fill_w, self.rect.h)
+            pygame.draw.rect(screen, ACCENT_CYAN, fill_rect, border_radius=4)
 
 def main():
     pygame.mixer.pre_init(44100, -16, 2, 512)
@@ -222,16 +223,19 @@ def main():
 
         screen.fill(BG_COLOR)
         
-        pygame.draw.rect(screen, (15, 18, 22), (0, 0, WIDTH, 100))
-        draw_text(screen, "CARGOBRR", 20, 20, 30, ACCENT_CYAN)
-        draw_text(screen, f"ENGINE: {cfg.engine_type} [{cfg.aspiration}] {cfg.transmission} (T=Type, B=Boost, G=Gears)", 20, 60, 20, TEXT_WHITE)
-        draw_text(screen, "TAB: Controls | S: " + ("STOP REC" if is_recording else "START REC"), WIDTH//2, 80, 16, ACCENT_RED if is_recording else TEXT_WHITE, "center")
+        # Header Line
+        pygame.draw.line(screen, (30, 35, 40), (20, 95), (WIDTH - 20, 95), 1)
+        draw_text(screen, "CARGOBRR", 20, 20, 26, ACCENT_CYAN)
+        draw_text(screen, f"ENG: {cfg.engine_type} | ASP: {cfg.aspiration} | TRN: {cfg.transmission}", 20, 60, 14, (160, 160, 160))
         
         if current_tab == "DASHBOARD":
             status_col = ACCENT_RED if st['damaged'] else (100, 255, 100)
-            draw_text(screen, f"TEMP: {st['coolant_temp']:.1f}C", WIDTH-20, 20, 20, status_col, "right")
-            draw_text(screen, f"AFR: {st['afr']:.1f}", WIDTH-20, 60, 20, TEXT_WHITE, "right")
-            draw_text(screen, f"GEAR: {st['gear'] if st['gear']>0 else 'N'}", WIDTH//2, 40, 50, ACCENT_ORANGE, "center")
+            draw_text(screen, f"TEMP: {st['coolant_temp']:.1f}°C", WIDTH-20, 20, 18, status_col, "right")
+            draw_text(screen, f"AFR: {st['afr']:.1f}", WIDTH-20, 50, 18, TEXT_WHITE, "right")
+            rec_text = "● REC" if is_recording else "○ REC (Press S)"
+            draw_text(screen, rec_text, WIDTH-20, 80, 14, ACCENT_RED if is_recording else (100, 100, 100), "right")
+            
+            draw_text(screen, f"{st['gear'] if st['gear']>0 else 'N'}", WIDTH//2, 50, 50, ACCENT_ORANGE, "center")
 
             g_rpm.draw(screen, st['rpm'], is_redline=st['rpm']>eng.cfg.redline*0.95)
             g_speed.draw(screen, st['speed_kmh'])
@@ -239,13 +243,14 @@ def main():
             graph_rpm.draw(screen)
 
             if st['backfire']:
-                draw_text(screen, "💥", 1030, 520, 60, align="center")
+                draw_text(screen, "💥", 1030, 520, 40, align="center")
             if st['limp_mode']:
-                draw_text(screen, "CHECK ENGINE", WIDTH//2, 140, 25, ACCENT_RED, "center")
+                draw_text(screen, "CHECK ENGINE", WIDTH//2, 140, 20, ACCENT_RED, "center")
             if st['brake']:
-                 draw_text(screen, "BRAKE", 250, 520, 25, ACCENT_RED, "center")
+                 draw_text(screen, "BRAKING", 250, 520, 20, ACCENT_RED, "center")
 
             for s in sliders: s.draw(screen)
+            draw_text(screen, "Press TAB for Controls", WIDTH - 20, HEIGHT - 20, 12, (100, 100, 100), "right")
         elif current_tab == "CONTROLS":
             draw_text(screen, "CONTROLS MENU", WIDTH//2, 150, 40, ACCENT_CYAN, "center")
             controls = [
