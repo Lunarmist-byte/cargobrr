@@ -155,15 +155,16 @@ def main():
     # Instantiate 10,000 CUDA engines
     eng = Engine(cfg, num_engines=10000)
 
-    s_throttle = Slider(50, 600, 250, "THROTTLE", 0.0, 1.0, 0.01, 0.0)
-    s_redline = Slider(650, 600, 250, "REDLINE", 4000, 9000, 100, cfg.redline)
-    sliders = [s_throttle, s_redline]
+    s_throttle = Slider(40, 600, 200, "THROTTLE", 0.0, 1.0, 0.01, 0.0)
+    s_load = Slider(280, 600, 200, "LOAD", 0.0, 1.0, 0.01, 0.0)
+    s_redline = Slider(520, 600, 200, "REDLINE", 4000, 9000, 100, cfg.redline)
+    sliders = [s_throttle, s_load, s_redline]
 
-    g_rpm = ModernGauge(WIDTH//2, 300, 140, "RPM", cfg.redline, "x1000", ACCENT_CYAN)
-    g_speed = ModernGauge(WIDTH//2 - 320, 320, 110, "SPEED", 240, "km/h", ACCENT_CYAN)
-    g_boost = ModernGauge(WIDTH//2 + 320, 320, 110, "BOOST", 2.0, "bar", ACCENT_ORANGE)
+    g_rpm = ModernGauge(WIDTH//2, 350, 160, "RPM", cfg.redline, "x1000", ACCENT_CYAN)
+    g_speed = ModernGauge(250, 350, 130, "SPEED", 240, "km/h", ACCENT_CYAN)
+    g_boost = ModernGauge(1030, 350, 130, "BOOST", 2.0, "bar", ACCENT_ORANGE)
 
-    graph_rpm = TelemetryGraph(WIDTH - 320, HEIGHT - 120, 300, 100, "LIVE RPM (CUDA Engine #0)", ACCENT_CYAN)
+    graph_rpm = TelemetryGraph(760, 580, 480, 100, "LIVE RPM (CUDA Engine #0)", ACCENT_CYAN)
 
     csvf = open(LOG_CSV, "w", newline="")
     writer = csv.writer(csvf)
@@ -227,13 +228,13 @@ def main():
         draw_text(screen, "CARGOBRR (CUDA Swarm)", 20, 20, 30, ACCENT_CYAN)
         draw_text(screen, f"ENGINE: {cfg.engine_type} [{cfg.aspiration}] {cfg.transmission} (T=Type, B=Boost, G=Gears)", 20, 60, 20, TEXT_WHITE)
         draw_text(screen, f"Active GPU Threads: 10,000", WIDTH//2 - 100, 20, 20, ACCENT_ORANGE)
-        draw_text(screen, "TAB: Controls | S: " + ("STOP REC" if is_recording else "START REC"), WIDTH//2, 80, 20, ACCENT_RED if is_recording else TEXT_WHITE, "center")
+        draw_text(screen, "TAB: Controls | S: " + ("STOP REC" if is_recording else "START REC"), WIDTH//2, 80, 16, ACCENT_RED if is_recording else TEXT_WHITE, "center")
         
         if current_tab == "DASHBOARD":
             status_col = ACCENT_RED if st['damaged'] else (100, 255, 100)
-            draw_text(screen, f"TEMP: {st['coolant_temp']:.1f}C", WIDTH-250, 25, 20, status_col)
-            draw_text(screen, f"AFR: {st['afr']:.1f}", WIDTH-450, 25, 20, TEXT_WHITE)
-            draw_text(screen, f"GEAR: {st['gear'] if st['gear']>0 else 'N'}", WIDTH//2, 50, 40, ACCENT_ORANGE, "center")
+            draw_text(screen, f"TEMP: {st['coolant_temp']:.1f}C", WIDTH-20, 20, 20, status_col, "right")
+            draw_text(screen, f"AFR: {st['afr']:.1f}", WIDTH-20, 60, 20, TEXT_WHITE, "right")
+            draw_text(screen, f"GEAR: {st['gear'] if st['gear']>0 else 'N'}", WIDTH//2, 40, 50, ACCENT_ORANGE, "center")
 
             g_rpm.draw(screen, st['rpm'], is_redline=st['rpm']>eng.cfg.redline*0.95)
             g_speed.draw(screen, st['speed_kmh'])
@@ -241,11 +242,11 @@ def main():
             graph_rpm.draw(screen)
 
             if st['backfire']:
-                draw_text(screen, "💥", WIDTH//2 + 90, 450, 60, align="center")
+                draw_text(screen, "💥", 1030, 520, 60, align="center")
             if st['limp_mode']:
-                draw_text(screen, "CHECK ENGINE", WIDTH//2, 200, 25, ACCENT_RED, "center")
+                draw_text(screen, "CHECK ENGINE", WIDTH//2, 140, 25, ACCENT_RED, "center")
             if st['brake']:
-                 draw_text(screen, "BRAKE", WIDTH//2, 500, 25, ACCENT_RED, "center")
+                 draw_text(screen, "BRAKE", 250, 520, 25, ACCENT_RED, "center")
 
             for s in sliders: s.draw(screen)
         elif current_tab == "CONTROLS":
