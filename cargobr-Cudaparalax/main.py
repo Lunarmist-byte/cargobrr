@@ -8,7 +8,7 @@ from engine import Engine, EngineConfig
 
 WIDTH, HEIGHT = 1280, 720
 FPS = 60
-LOG_CSV = "engine_timeseries.csv"
+LOG_CSV = "engine_timeseries_cuda.csv"
 SOUND_FILE = os.environ.get("ENGINE_SOUND_FILE", None)
 
 BG_COLOR = (10, 12, 16)
@@ -141,7 +141,7 @@ def main():
     pygame.mixer.pre_init(44100, -16, 2, 512)
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Cargobrr Simulator")
+    pygame.display.set_caption("Cargobrr CUDA Simulator")
     clock = pygame.time.Clock()
 
     engine_types = ["1.0L", "1.6L", "2.0L", "3.0L", "4.0L", "5.0L", "6.2L", "8.0L"]
@@ -149,18 +149,19 @@ def main():
     aspiration_types = ["Stock", "NA", "Turbo", "SC"]
     current_aspiration_idx = 0
     cfg = EngineConfig(engine_types[current_engine_idx], aspiration_types[current_aspiration_idx])
-    eng = Engine(cfg)
+    
+    # Instantiate 10,000 CUDA engines
+    eng = Engine(cfg, num_engines=10000)
 
     s_throttle = Slider(50, 600, 250, "THROTTLE", 0.0, 1.0, 0.01, 0.0)
-    s_load = Slider(350, 600, 250, "LOAD", 0.0, 1.0, 0.01, 0.0)
     s_redline = Slider(650, 600, 250, "REDLINE", 4000, 9000, 100, cfg.redline)
-    sliders = [s_throttle, s_load, s_redline]
+    sliders = [s_throttle, s_redline]
 
     g_rpm = ModernGauge(WIDTH//2, 300, 140, "RPM", cfg.redline, "x1000", ACCENT_CYAN)
     g_speed = ModernGauge(WIDTH//2 - 320, 320, 110, "SPEED", 240, "km/h", ACCENT_CYAN)
     g_boost = ModernGauge(WIDTH//2 + 320, 320, 110, "BOOST", 2.0, "bar", ACCENT_ORANGE)
 
-    graph_rpm = TelemetryGraph(WIDTH - 320, HEIGHT - 120, 300, 100, "LIVE RPM", ACCENT_CYAN)
+    graph_rpm = TelemetryGraph(WIDTH - 320, HEIGHT - 120, 300, 100, "LIVE RPM (CUDA Engine #0)", ACCENT_CYAN)
 
     csvf = open(LOG_CSV, "w", newline="")
     writer = csv.writer(csvf)
@@ -181,16 +182,16 @@ def main():
                 if ev.key == pygame.K_ESCAPE: running = False
                 if ev.key == pygame.K_e: eng.gear_up()
                 if ev.key == pygame.K_q: eng.gear_down()
-                if ev.key == pygame.K_r: eng = Engine(cfg)
+                if ev.key == pygame.K_r: eng = Engine(cfg, num_engines=10000)
                 if ev.key == pygame.K_t: 
                     current_engine_idx = (current_engine_idx + 1) % len(engine_types)
                     cfg = EngineConfig(engine_types[current_engine_idx], aspiration_types[current_aspiration_idx])
-                    eng = Engine(cfg)
+                    eng = Engine(cfg, num_engines=10000)
                     s_redline.value = cfg.redline
                 if ev.key == pygame.K_b:
                     current_aspiration_idx = (current_aspiration_idx + 1) % len(aspiration_types)
                     cfg = EngineConfig(engine_types[current_engine_idx], aspiration_types[current_aspiration_idx])
-                    eng = Engine(cfg)
+                    eng = Engine(cfg, num_engines=10000)
                     s_redline.value = cfg.redline
                 if ev.key == pygame.K_UP: s_throttle.value = min(1.0, s_throttle.value + 0.1)
                 if ev.key == pygame.K_DOWN: s_throttle.value = max(0.0, s_throttle.value - 0.1)
@@ -199,11 +200,11 @@ def main():
         keys = pygame.key.get_pressed()
         eng.set_brake(1.0 if keys[pygame.K_SPACE] else 0.0)
         eng.set_throttle(s_throttle.value)
-        eng.set_load(s_load.value)
         eng.cfg.redline = s_redline.value
 
         eng.update(dt)
-        st = eng.get_state()
+        # Getting state from index 0 to display
+        st = eng.get_state(index=0)
 
         g_rpm.max_val = eng.cfg.redline
         graph_rpm.update(st['rpm'])
@@ -211,8 +212,9 @@ def main():
         screen.fill(BG_COLOR)
         
         pygame.draw.rect(screen, (15, 18, 22), (0, 0, WIDTH, 100))
-        draw_text(screen, "CARGOBRR", 20, 20, 30, ACCENT_CYAN)
+        draw_text(screen, "CARGOBRR (CUDA Swarm)", 20, 20, 30, ACCENT_CYAN)
         draw_text(screen, f"ENGINE: {cfg.engine_type} [{cfg.aspiration}] (T=Type, B=Boost)", 20, 60, 20, TEXT_WHITE)
+        draw_text(screen, f"Active GPU Threads: 10,000", WIDTH//2 - 100, 20, 20, ACCENT_ORANGE)
         
         status_col = ACCENT_RED if st['damaged'] else (100, 255, 100)
         draw_text(screen, f"TEMP: {st['coolant_temp']:.1f}C", WIDTH-250, 25, 20, status_col)
