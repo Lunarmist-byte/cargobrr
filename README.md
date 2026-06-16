@@ -18,6 +18,9 @@ A kinda good simulation (goes hard brr) of a car for future project testing. Sim
   - `NA`: Naturally Aspirated.
   - `Turbo`: Exhaust-driven turbocharger (features turbo lag).
   - `SC`: Belt-driven supercharger (instant spooling).
+- **Transmission Swapping**: Dynamically change the gearbox between 5-Speed, 6-Speed, 7-Speed, and 8-Speed configurations.
+- **Modern Dashboard & Telemetry**: Clean, non-overlapping multi-tab interface (Dashboard / Controls) with live telemetry graphs.
+- **CSV Telemetry Recording**: Toggle live data logging of RPM, Throttle, Gear, Boost, and Speed to `engine_timeseries.csv` for external analysis.
 - **CUDA Swarm Simulator**: Includes a Numba CUDA implementation (`cargobr-Cudaparalax`) capable of simulating 10,000 engines in parallel on the GPU with the exact same physics as the standard Python version.
 
 ## Installation
@@ -73,7 +76,10 @@ ENGINE_SOUND_FILE=path/to/engine_loop.wav python src/main.py
 | **E** | Shift Gear Up |
 | **T** | Cycle Engine Profile (Displacement) |
 | **B** | Cycle Engine Aspiration (NA, Turbo, Supercharger) |
+| **G** | Change Gearbox (5/6/7/8 Speed) |
 | **R** | Reset Simulation (Repairs Engine) |
+| **S** | Toggle Excel/CSV Recording |
+| **TAB** | Toggle Dashboard / Controls Tab |
 | **ESC** | Quit Simulator |
 | **Mouse Drag** | Adjust on-screen sliders (Throttle, Load, Redline) |
 
