@@ -125,3 +125,7 @@ Unlike simple limiters that clamp the RPM value, this system uses a fuel-cut str
 ## Images
 <img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/67dd7717-0175-403c-8bac-8aba33e9b64e" />
 <img width="500" height="500" alt="Screenshot 2025-11-30 195801" src="https://github.com/user-attachments/assets/0e915450-1ca3-4ce6-8c0c-e0f87df0b297" />
+
+
+https://github.com/user-attachments/assets/ea2d2941-6314-4965-8ed5-5eb79c4096d4
+
